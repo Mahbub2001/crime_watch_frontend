@@ -15,7 +15,7 @@ const Report_Crime = () => {
   const [title, setTitle] = useState("");
   const [mediaFiles, setMediaFiles] = useState([]);
   const [selectedDate, setSelectedDate] = useState("");
-  const {user} = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
 
   const handleGenerateDescription = async () => {
     if (mediaFiles.length === 0) {
@@ -49,59 +49,148 @@ const Report_Crime = () => {
 
   console.log(description);
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   // Upload images one by one and collect URLs
+  //   const uploadedImages = await Promise.all(
+  //     mediaFiles.map(async (file) => {
+  //       const uploadedData = await imageUpload(file);
+  //       return uploadedData?.data?.url; // Extracting the image URL
+  //     })
+  //   );
+  //   const filteredImages = uploadedImages.filter((url) => url);
+
+  //   const reportData = {
+  //     name: isAnonymous ? "Anonymous" : e.target.name.value,
+  //     contact: isAnonymous ? "N/A" : e.target.contact.value,
+  //     district: selectedDistrict,
+  //     division: selectedDivision,
+  //     location: e.target.location.value,
+  //     description: description,
+  //     title: title,
+  //     crime_data: selectedDate,
+  //     useremail: user?.email,
+  //     media: filteredImages,
+  //     anonymous: isAnonymous,
+  //     claimCode: isAnonymous ? Math.random().toString(36).substr(2, 8) : null,
+  //   };
+
+  //   console.log("Submitting Report:", reportData);
+
+  //   if(!user || !user.emailVerified){
+  //       alert("Please login to submit a report");
+  //       return;
+  //   }
+
+  //   fetch(`${process.env.NEXT_PUBLIC_API_URL}/crimes`, {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //     },
+  //     body: JSON.stringify(reportData),
+  //   }).then((response) => {
+  //     if (!response.ok) {
+  //       throw new Error("Failed to submit report");
+  //     }
+  //     toast.success("Report submitted successfully");
+  //     return response.json();
+  //   });
+  //   // return;
+
+  //   if (isAnonymous) {
+  //     setClaimCode(reportData.claimCode);
+  //     alert(
+  //       `Your anonymous report has been submitted. Save this code to claim later: ${reportData.claimCode}`
+  //     );
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Upload images one by one and collect URLs
-    const uploadedImages = await Promise.all(
-      mediaFiles.map(async (file) => {
-        const uploadedData = await imageUpload(file);
-        return uploadedData?.data?.url; // Extracting the image URL
-      })
-    );
-    const filteredImages = uploadedImages.filter((url) => url);
+    const image = mediaFiles[0]; 
+    const description = e.target.description.value; 
 
-    const reportData = {
-      name: isAnonymous ? "Anonymous" : e.target.name.value,
-      contact: isAnonymous ? "N/A" : e.target.contact.value,
-      district: selectedDistrict,
-      division: selectedDivision,
-      location: e.target.location.value,
-      description: description,
-      title: title,
-      crime_data: selectedDate,
-      media: filteredImages,
-      anonymous: isAnonymous,
-      claimCode: isAnonymous ? Math.random().toString(36).substr(2, 8) : null,
-    };
+    try {
+      // Send image and description to verify API
+      const formData = new FormData();
+      formData.append("image", image);
+      formData.append("description", description);
 
-    console.log("Submitting Report:", reportData);
+      const verifyResponse = await fetch("http://127.0.0.1:5000/verify-description", {
+        method: "POST",
+        body: formData,
+      });
 
-    if(!user || !user.emailVerified){
-        alert("Please login to submit a report");
-        return;
-    }
+      const verifyData = await verifyResponse.json();
+      if (verifyResponse.ok) {
+        if (verifyData.description_verification !== "real") {
+          alert("Description does not match the image.");
+          // return; // Stop if the description doesn't match
+        }
+        console.log("Image and description verified as real.");
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/crimes`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(reportData),
-    }).then((response) => {
-      if (!response.ok) {
-        throw new Error("Failed to submit report");
+        // Proceed with uploading images
+        const uploadedImages = await Promise.all(
+          mediaFiles.map(async (file) => {
+            const uploadedData = await imageUpload(file);
+            return uploadedData?.data?.url; 
+          })
+        );
+        const filteredImages = uploadedImages.filter((url) => url);
+
+        const reportData = {
+          name: isAnonymous ? "Anonymous" : e.target.name.value,
+          contact: isAnonymous ? "N/A" : e.target.contact.value,
+          district: selectedDistrict,
+          division: selectedDivision,
+          location: e.target.location.value,
+          description: description,
+          title: title,
+          crime_data: selectedDate,
+          useremail: user?.email,
+          media: filteredImages,
+          verifyresult: verifyData.description_verification,
+          anonymous: isAnonymous,
+          claimCode: isAnonymous
+            ? Math.random().toString(36).substr(2, 8)
+            : null,
+        };
+
+        console.log("Submitting Report:", reportData);
+
+        if (!user || !user.emailVerified) {
+          alert("Please login to submit a report");
+          return;
+        }
+
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/crimes`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(reportData),
+        }).then((response) => {
+          if (!response.ok) {
+            throw new Error("Failed to submit report");
+          }
+          toast.success("Report submitted successfully");
+          return response.json();
+        });
+
+        if (isAnonymous) {
+          setClaimCode(reportData.claimCode);
+          alert(
+            `Your anonymous report has been submitted. Save this code to claim later: ${reportData.claimCode}`
+          );
+        }
+      } else {
+        alert("Failed to verify the description and image.");
       }
-      toast.success("Report submitted successfully");
-      return response.json();
-    });
-    // return;
-
-    if (isAnonymous) {
-      setClaimCode(reportData.claimCode);
-      alert(
-        `Your anonymous report has been submitted. Save this code to claim later: ${reportData.claimCode}`
-      );
+    } catch (error) {
+      console.error("Error during description verification:", error);
+      alert("An error occurred during description verification.");
     }
   };
 

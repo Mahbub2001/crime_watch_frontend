@@ -28,7 +28,7 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="bg-white border-gray-200 dark:bg-gray-900">
+      <nav className="bg-white border-gray-200 dark:bg-gray-900 !z-50">
         <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
           <Link href="/" className="flex items-center space-x-3">
             {/* <img
@@ -46,19 +46,19 @@ const Navbar = () => {
               <>
                 <button
                   type="button"
-                  className="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+                  className="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600 !z-50"
                   onClick={toggleDropdown}
                 >
                   <span className="sr-only">Open user menu</span>
                   <img
-                    className="w-8 h-8 rounded-full"
+                    className="w-8 h-8 rounded-full z-50"
                     // src="d"
                     alt="user photo"
                   />
                 </button>
 
                 {isDropdownOpen && (
-                  <div className="absolute right-0  mt-72 w-48 bg-white divide-y divide-gray-100 rounded-lg shadow-lg dark:bg-gray-700 dark:divide-gray-600">
+                  <div className="absolute right-0  mt-52 w-48 bg-white divide-y divide-gray-100 rounded-lg shadow-lg dark:bg-gray-700 dark:divide-gray-600 z-50">
                     <div className="px-4 py-3">
                       <span className="block text-sm dark:text-white">
                         {user?.displayName}
@@ -143,7 +143,7 @@ const Navbar = () => {
             <ul className="flex flex-col font-thin p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 dark:border-gray-700">
               <li>
                 <Link
-                  href="#"
+                  href="/"
                   className="block py-2 px-3 text-blue-700 rounded-sm md:bg-transparent md:p-0 dark:text-blue-500"
                 >
                   Home
