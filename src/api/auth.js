@@ -26,7 +26,7 @@ export const setAuthToken = async (data) => {
     const result = await response.json();
     if (result.accessToken && result.refreshToken) {
       setCookie("accessToken", result.accessToken, { expires: 15 / (24 * 60) });
-      setCookie("refreshToken", result.refreshToken, { expires: 7 }); 
+      setCookie("refreshToken", result.refreshToken, { expires: 7 });
     }
 
     if (result) {
@@ -57,12 +57,17 @@ export const setAuthToken1 = async (data) => {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // Include cookies
+        credentials: "include",
         body: JSON.stringify(currentUser),
       }
     );
 
     const result = await response.json();
+
+    if (result.accessToken && result.refreshToken) {
+      setCookie("accessToken", result.accessToken, { expires: 15 / (24 * 60) });
+      setCookie("refreshToken", result.refreshToken, { expires: 7 });
+    }
 
     if (result) {
       console.log("User updated and tokens set in cookies");
@@ -111,29 +116,33 @@ export const fetchWithAuth = async (url, options = {}) => {
   }
 };
 // Function to refresh the access token
-// Function to refresh the access token
 const refreshAccessToken = async () => {
   const refreshToken = Cookies.get("refreshToken");
 
-  if (!refreshToken) {
-    throw new Error("No refresh token found. Please log in.");
-  }
+  // if (!refreshToken) {
+  //   throw new Error("No refresh token found. Please log in.");
+  // }
 
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/refresh-token`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify({ refreshToken }),
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/refresh-token`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ refreshToken }),
+      }
+    );
 
     const result = await response.json();
 
     if (result.accessToken) {
       // Update the access token in cookies
-      Cookies.set("accessToken", result.accessToken, { expires: 15 / (24 * 60) }); // 15 minutes
+      Cookies.set("accessToken", result.accessToken, {
+        expires: 15 / (24 * 60),
+      }); // 15 minutes
       return result.accessToken;
     } else {
       throw new Error("Failed to refresh access token.");
@@ -146,20 +155,23 @@ const refreshAccessToken = async () => {
 // Function to logout
 export const logoutApiCall = async () => {
   try {
-    // Step 1: Check if the access token is expired
     let accessToken = Cookies.get("accessToken");
 
-    if (!accessToken) {
-      throw new Error("No access token found. Please log in.");
-    }
+    // if (!accessToken) {
+    //   throw new Error("No access token found. Please log in.");
+    // }
 
-    // Step 2: Attempt to logout with the current access token
+    // console.log(accessToken);
+
+    // console.log(" Logging out...");
+
+    // return;
     let response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logout`, {
       method: "POST",
-      credentials: "include",
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
+      credentials: "include",
     });
 
     if (response.status === 401) {
@@ -168,10 +180,10 @@ export const logoutApiCall = async () => {
       if (newAccessToken) {
         response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logout`, {
           method: "POST",
-          credentials: "include",
           headers: {
             Authorization: `Bearer ${newAccessToken}`,
           },
+          credentials: "include",
         });
       } else {
         throw new Error("Failed to refresh access token. Please log in again.");
