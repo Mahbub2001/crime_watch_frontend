@@ -70,7 +70,7 @@ const Navbar = () => {
                     <ul className="py-2">
                       <li>
                         <Link
-                          href="#"
+                          href="/dash"
                           className="block px-4 py-2 text-sm text-gray-700  dark:hover:bg-gray-600 dark:text-gray-200"
                         >
                           Dashboard
@@ -151,7 +151,7 @@ const Navbar = () => {
               </li>
               <li>
                 <Link
-                  href="#"
+                  href="/about"
                   className="block py-2 px-3  md:hover:text-blue-700 md:p-0 dark:text-white"
                 >
                   About
@@ -159,7 +159,7 @@ const Navbar = () => {
               </li>
               <li>
                 <Link
-                  href="#"
+                  href="/crimes"
                   className="block py-2 px-3  md:hover:text-blue-700 md:p-0 dark:text-white"
                 >
                   Crimes Reports
@@ -167,7 +167,7 @@ const Navbar = () => {
               </li>
               <li>
                 <Link
-                  href="#"
+                  href="/report_crimes"
                   className="block py-2 px-3  md:hover:text-blue-700 md:p-0 dark:text-white"
                 >
                   Report A Crime

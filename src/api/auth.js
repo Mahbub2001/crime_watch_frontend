@@ -18,7 +18,7 @@ export const setAuthToken = async (data) => {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // Include cookies
+        credentials: "include",
         body: JSON.stringify(currentUser),
       }
     );
@@ -119,10 +119,6 @@ export const fetchWithAuth = async (url, options = {}) => {
 const refreshAccessToken = async () => {
   const refreshToken = Cookies.get("refreshToken");
 
-  // if (!refreshToken) {
-  //   throw new Error("No refresh token found. Please log in.");
-  // }
-
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/refresh-token`,
@@ -156,16 +152,6 @@ const refreshAccessToken = async () => {
 export const logoutApiCall = async () => {
   try {
     let accessToken = Cookies.get("accessToken");
-
-    // if (!accessToken) {
-    //   throw new Error("No access token found. Please log in.");
-    // }
-
-    // console.log(accessToken);
-
-    // console.log(" Logging out...");
-
-    // return;
     let response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logout`, {
       method: "POST",
       headers: {
