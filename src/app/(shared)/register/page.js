@@ -32,7 +32,7 @@ function Register() {
 
       setAuthToken1(data);
       await updateUserProfile(firstName, display_url);
-    //   await handleEmailVerification();
+      await handleEmailVerification();
       toast.success("Sign Up Successful");
     } catch (error) {
       console.error("Error during registration:", error);

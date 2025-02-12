@@ -1,16 +1,65 @@
 "use client";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { districts } from "@/data/district";
 import { divisions } from "@/data/division";
+import { imageUpload } from "@/api/imageUploadApi";
+import { AuthContext } from "@/hooks/AuthProvider";
+import { toast } from "react-toastify";
 
 const Report_Crime = () => {
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [selectedDivision, setSelectedDivision] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [claimCode, setClaimCode] = useState(null);
+  const [description, setDescription] = useState("");
+  const [title, setTitle] = useState("");
+  const [mediaFiles, setMediaFiles] = useState([]);
+  const [selectedDate, setSelectedDate] = useState("");
+  const {user} = useContext(AuthContext);
+
+  const handleGenerateDescription = async () => {
+    if (mediaFiles.length === 0) {
+      alert("Please upload at least one image.");
+      return;
+    }
+
+    const formData = new FormData();
+    mediaFiles.forEach((file) => {
+      formData.append("images", file);
+    });
+
+    try {
+      const response = await fetch("http://127.0.0.1:5000/describe-images", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setDescription(data.description);
+      setTitle(`Report for ${selectedDistrict}, ${selectedDivision}`);
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Failed to generate description. Please try again.");
+    }
+  };
+
+  console.log(description);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Upload images one by one and collect URLs
+    const uploadedImages = await Promise.all(
+      mediaFiles.map(async (file) => {
+        const uploadedData = await imageUpload(file);
+        return uploadedData?.data?.url; // Extracting the image URL
+      })
+    );
+    const filteredImages = uploadedImages.filter((url) => url);
 
     const reportData = {
       name: isAnonymous ? "Anonymous" : e.target.name.value,
@@ -18,14 +67,35 @@ const Report_Crime = () => {
       district: selectedDistrict,
       division: selectedDivision,
       location: e.target.location.value,
-      description: e.target.description.value,
-      media: e.target.media.files[0] || null,
+      description: description,
+      title: title,
+      crime_data: selectedDate,
+      media: filteredImages,
       anonymous: isAnonymous,
       claimCode: isAnonymous ? Math.random().toString(36).substr(2, 8) : null,
     };
 
-    // Simulate backend request
     console.log("Submitting Report:", reportData);
+
+    if(!user || !user.emailVerified){
+        alert("Please login to submit a report");
+        return;
+    }
+
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/crimes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(reportData),
+    }).then((response) => {
+      if (!response.ok) {
+        throw new Error("Failed to submit report");
+      }
+      toast.success("Report submitted successfully");
+      return response.json();
+    });
+    // return;
 
     if (isAnonymous) {
       setClaimCode(reportData.claimCode);
@@ -146,20 +216,66 @@ const Report_Crime = () => {
             name="media"
             className="file-input file-input-bordered w-full max-w-xl"
             accept="image/*, video/*, audio/*"
+            multiple
+            onChange={(e) => {
+              setMediaFiles((prevFiles) => [
+                ...prevFiles,
+                ...Array.from(e.target.files),
+              ]);
+            }}
           />
+        </label>
+
+        {/* Generate Description Button */}
+        <button
+          type="button"
+          className="btn btn-secondary w-full max-w-xs mb-4"
+          onClick={handleGenerateDescription}
+        >
+          Generate Title and Description
+        </button>
+
+        {/* AI Writing (Title) */}
+        <label className="form-control w-full mb-4">
+          <div className="label">
+            <span className="label-text">Title</span>
+          </div>
+          <textarea
+            name="title"
+            className="textarea-bordered h-24"
+            placeholder="Write something..."
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          ></textarea>
         </label>
 
         {/* AI Writing (Description) */}
         <label className="form-control w-full mb-4">
           <div className="label">
-            <span className="label-text">AI Writing</span>
+            <span className="label-text">Description</span>
           </div>
           <textarea
             name="description"
             className="textarea textarea-bordered h-24"
             placeholder="Write something..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
           ></textarea>
         </label>
+
+        <div className="flex flex-col gap-2">
+          <label className="form-control w-full max-w-xs">
+            <span className="label-text">Select a Date</span>
+            <input
+              type="date"
+              className="input input-bordered w-full max-w-xs"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+            />
+          </label>
+
+          {selectedDate && <p>Selected Date: {selectedDate}</p>}
+        </div>
 
         {/* Submit Button */}
         <button type="submit" className="btn btn-primary w-full max-w-xs">
